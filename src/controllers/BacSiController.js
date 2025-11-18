@@ -2,58 +2,78 @@
 // src/controllers/BacSiController.js
 // ======================================================
 
+import { toast } from "react-toastify";
+
 import {
   getChoKham,
   getHomNay,
   updateKetQuaKham,
-  chiDinhDichVu,
-  keDonThuoc,
   cancelLanKham,
   getLichSuKham,
+  getPhongByBacSi,
+  getLanKhamDetail,
+  getDVKTByLanKham,
+  ensureOk,
 } from "../api/BacSiApi";
 
-import { toast } from "react-toastify";
-import { getPhongByBacSi } from "../api/BacSiApi"; // ⭐ thêm import
+import {
+  apiGetThuocList,
+  apiCheckDonThuoc,
+  apiCreateDonThuoc,
+  apiUpdateDonThuoc,
+  apiDeleteDonThuoc,
+  apiGetDonTheoLanKham,
+  apiGoiYThuoc,
+} from "../api/DonThuocApi";
 
-/* ======================================================
- *  1️⃣ DANH SÁCH CHỜ KHÁM
- * ====================================================== */
+
+// ======================================================
+// ⭐ 0) LẤY CHI TIẾT LẦN KHÁM
+// ======================================================
+export async function fetchLanKhamDetail(id, setState) {
+  try {
+    const res = await getLanKhamDetail(id);
+    const data = ensureOk(res);
+    setState(data);        
+  } catch (e) {
+    console.error("❌ fetchLanKhamDetail Error:", e);
+  }
+}
+
+
+// ======================================================
+// 1) DANH SÁCH CHỜ KHÁM
+// ======================================================
 export async function fetchChoKhamList(idBacSi, idPhong, setList) {
   try {
     const res = await getChoKham({ idBacSi, idPhong });
-
-    if (!res.ok) throw new Error(res.message);
-
+    ensureOk(res);
     setList(res.data || []);
-    console.log("[FE] 👉 ChoKham:", res.data);
-
   } catch (err) {
-    console.error("❌ Lỗi fetchChoKhamList:", err);
+    console.error("❌ fetchChoKhamList:", err);
     toast.error("Không tải được danh sách chờ khám!");
   }
 }
 
-/* ======================================================
- *  2️⃣ DANH SÁCH HÔM NAY
- * ====================================================== */
+
+// ======================================================
+// 2) DANH SÁCH HÔM NAY
+// ======================================================
 export async function fetchHomNayList(idBacSi, idPhong, setList) {
   try {
     const res = await getHomNay({ idBacSi, idPhong });
-
-    if (!res.ok) throw new Error(res.message);
-
+    ensureOk(res);
     setList(res.data || []);
-    console.log("[FE] 👉 HomNay:", res.data);
-
   } catch (err) {
-    console.error("❌ Lỗi fetchHomNayList:", err);
-    toast.error("Không thể tải danh sách hôm nay!");
+    console.error("❌ fetchHomNayList:", err);
+    toast.error("Không tải được danh sách hôm nay!");
   }
 }
 
-/* ======================================================
- *  3️⃣ CẬP NHẬT KẾT QUẢ KHÁM
- * ====================================================== */
+
+// ======================================================
+// 3) CẬP NHẬT KẾT QUẢ
+// ======================================================
 export async function handleUpdateKetQua(idLanKham, form, onDone) {
   try {
     const dto = {
@@ -65,98 +85,158 @@ export async function handleUpdateKetQua(idLanKham, form, onDone) {
     };
 
     const res = await updateKetQuaKham(idLanKham, dto);
+    ensureOk(res);
 
-    if (!res.ok) throw new Error(res.message);
-
-    toast.success("💾 Lưu kết quả khám thành công!");
+    toast.success("💾 Đã lưu kết quả khám!");
     onDone?.();
-
   } catch (err) {
-    console.error("❌ Lỗi handleUpdateKetQua:", err);
+    console.error("❌ handleUpdateKetQua:", err);
     toast.error("Không thể lưu kết quả khám!");
   }
 }
 
-/* ======================================================
- *  4️⃣ CHỈ ĐỊNH DVKT
- * ====================================================== */
-export async function handleChiDinhDVKT(idLanKham, ds, onDone) {
+
+// ======================================================
+// 4) LẤY ĐƠN THUỐC THEO LẦN KHÁM
+// ======================================================
+export async function fetchDonTheoLanKham(idLanKham, setDon) {
   try {
-    const res = await chiDinhDichVu(idLanKham, ds);
-
-    if (!res.ok) throw new Error(res.message);
-
-    toast.success("🧪 Đã chỉ định DVKT!");
-    onDone?.();
-
+    const res = await apiGetDonTheoLanKham(idLanKham);
+    setDon(res.data || null);
   } catch (err) {
-    console.error("❌ Lỗi handleChiDinhDVKT:", err);
-    toast.error("Không thể chỉ định DVKT!");
+    console.error("❌ fetchDonTheoLanKham:", err);
+    setDon(null);
   }
 }
 
-/* ======================================================
- *  5️⃣ KÊ ĐƠN THUỐC
- * ====================================================== */
-export async function handleKeDonThuoc(idLanKham, dto, onDone) {
+
+// ======================================================
+// 5) LẤY DANH SÁCH THUỐC
+// ======================================================
+export async function fetchThuocList(setList) {
   try {
-    const res = await keDonThuoc(idLanKham, dto);
+    const res = await apiGetThuocList();
+    setList(res.data || []);
+  } catch (err) {
+    console.error("❌ fetchThuocList:", err);
+    toast.error("Không tải được danh sách thuốc!");
+  }
+}
 
-    if (!res.ok) throw new Error(res.message);
 
-    toast.success("💊 Kê đơn thành công!");
+export async function handleCheckDonThuoc(dto) {
+  try {
+    const res = await apiCheckDonThuoc(dto);
+    return res.data || null;
+  } catch {
+    return null;
+  }
+}
+
+
+// ======================================================
+// ⭐ 6) DVKT THEO LẦN KHÁM
+// ======================================================
+export async function fetchDVKTTheoLanKham(idLanKham, setter) {
+  try {
+    const res = await getDVKTByLanKham(idLanKham);
+    ensureOk(res);
+    setter(res.data || []);
+  } catch (err) {
+    console.error("❌ fetchDVKTTheoLanKham:", err);
+    setter([]);
+  }
+}
+
+
+// ======================================================
+// 7) TẠO – CẬP NHẬT – XÓA ĐƠN THUỐC
+// ======================================================
+export async function handleCreateDonThuoc(dto, onDone) {
+  try {
+    const res = await apiCreateDonThuoc(dto);
+    toast.success("💊 Đã tạo đơn thuốc!");
     onDone?.(res.data);
-
   } catch (err) {
-    console.error("❌ Lỗi handleKeDonThuoc:", err);
-    toast.error("Không thể kê đơn thuốc!");
+    console.error("❌ handleCreateDonThuoc:", err);
+    toast.error("Không thể tạo đơn thuốc!");
   }
 }
 
-/* ======================================================
- *  6️⃣ HỦY LƯỢT KHÁM
- * ====================================================== */
+export async function handleUpdateDonThuoc(id, dto, onDone) {
+  try {
+    const res = await apiUpdateDonThuoc(id, dto);
+    toast.success("🔄 Đã cập nhật đơn!");
+    onDone?.(res.data);
+  } catch (err) {
+    console.error("❌ handleUpdateDonThuoc:", err);
+    toast.error("Không thể cập nhật đơn thuốc!");
+  }
+}
+
+export async function handleDeleteDonThuoc(id, onDone) {
+  try {
+    await apiDeleteDonThuoc(id);
+    toast.info("🗑️ Đã xóa đơn thuốc");
+    onDone?.();
+  } catch (err) {
+    console.error("❌ handleDeleteDonThuoc:", err);
+  }
+}
+
+
+// ======================================================
+// 8) GỢI Ý THUỐC
+// ======================================================
+export async function fetchGoiYThuoc(idThuoc, setList) {
+  try {
+    const res = await apiGoiYThuoc(idThuoc);
+    setList(res.data || []);
+  } catch (err) {
+    console.error("❌ fetchGoiYThuoc:", err);
+  }
+}
+
+
+// ======================================================
+// 9) HỦY KHÁM
+// ======================================================
 export async function handleCancelLanKham(idLanKham, reason, onDone) {
   try {
     const res = await cancelLanKham(idLanKham, reason);
+    ensureOk(res);
 
-    if (!res.ok) throw new Error(res.message);
-
-    toast.info("🗑️ Lượt khám đã bị hủy!");
+    toast.info("🗑️ Đã hủy lượt khám");
     onDone?.();
-
   } catch (err) {
-    console.error("❌ Lỗi handleCancelLanKham:", err);
-    toast.error("Không thể hủy lượt khám!");
+    console.error("❌ handleCancelLanKham:", err);
   }
 }
 
+
+// ======================================================
+// 🔟 PHÒNG BÁC SĨ
+// ======================================================
 export async function fetchPhongBacSi(idBacSi, setPhong) {
   try {
     const res = await getPhongByBacSi(idBacSi);
-    if (!res.ok) throw new Error(res.message);
-
-    setPhong(res.data); // trả về { idPhong, tenPhong, idKhoa }
-    console.log("[Phong BS]", res.data);
+    ensureOk(res);
+    setPhong(res.data);
   } catch (err) {
-    console.error("❌ Lỗi tải phòng bác sĩ:", err);
+    console.error("❌ fetchPhongBacSi:", err);
   }
 }
 
-/* ======================================================
- *  7️⃣ LỊCH SỬ KHÁM
- * ====================================================== */
+
+// ======================================================
+// 1️⃣1️⃣ LỊCH SỬ KHÁM
+// ======================================================
 export async function fetchLichSuKham(idBenhNhan, setList) {
   try {
     const res = await getLichSuKham(idBenhNhan);
-
-    if (!res.ok) throw new Error(res.message);
-
+    ensureOk(res);
     setList(res.data || []);
-    console.log("[FE] 👉 LichSuKham:", res.data);
-
   } catch (err) {
-    console.error("❌ Lỗi fetchLichSuKham:", err);
-    toast.error("Không thể tải lịch sử khám!");
+    console.error("❌ fetchLichSuKham:", err);
   }
 }

@@ -29,10 +29,10 @@ export default function StaffDashboard() {
       glow: "shadow-[0_0_25px_3px_rgba(245,158,11,0.25)]",
     },
     {
-      title: "Lịch làm việc",
+      title: "Thực hiện Cận lâm sàng",
       icon: <CalendarCheck2 size={40} className="text-indigo-500" />,
-      desc: "Xem lịch làm việc của bác sĩ, phòng khám và nhân viên hỗ trợ.",
-      path: "/lich-lam-viec",
+      desc: "Xem và thực hiện các chỉ định dịch vụ kỹ thuật từ bác sĩ.",
+      path: "/can-lam-sang",
       glow: "shadow-[0_0_25px_3px_rgba(99,102,241,0.25)]",
     },
   ];

@@ -1,4 +1,4 @@
-// src/pages/admin/DanhMucDVKT/DanhMucDVKT.jsx
+// src/pages/admin/DanhMucDichVu/DanhMucDichVu.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import {
   getNhomDichVu,
@@ -11,7 +11,7 @@ import {
   updateDichVuGia,
   softDeleteDichVuGia,
   getGiaHienHanh,
-} from "../../../controllers/DanhMucDVKT";
+} from "../../../controllers/DanhMucDichVuController";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -782,7 +782,7 @@ function BangGiaTab() {
 }
 
 // ========== Trang chính ==========
-export default function DanhMucDVKT() {
+export default function DanhMucDichVu() {
   const [active, setActive] = useState("nhom");
 
   const tabs = useMemo(

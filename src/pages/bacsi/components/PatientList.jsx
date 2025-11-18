@@ -1,11 +1,15 @@
 // src/pages/bacsi/components/PatientList.jsx
 import React from "react";
 
-export default function PatientList({ list, filter, setFilter, selected, setSelected }) {
+export default function PatientList({ 
+  list, filter, setFilter, selected, setSelected 
+})
+ {
+
   const title = filter === "CHO_KHAM" ? "📋 Chờ khám" : "📆 Hôm nay";
 
   return (
-    <div className="w-1/4 bg-white rounded-xl border shadow-sm flex flex-col">
+<div className="w-[320px] bg-white rounded-xl border shadow-sm flex flex-col">
       {/* Header */}
       <div className="flex justify-between items-center bg-gradient-to-r from-sky-600 to-cyan-500 text-white text-sm font-semibold px-4 py-2 rounded-t-xl">
         <span>{title}</span>
@@ -39,7 +43,7 @@ export default function PatientList({ list, filter, setFilter, selected, setSele
           list.map((bn) => (
             <div
               key={bn.id}
-              onClick={() => setSelected(bn)}
+onClick={() => setSelected(bn)}
               className={`border rounded-md p-2 mb-2 cursor-pointer hover:bg-sky-50 transition-all ${
                 selected?.id === bn.id ? "border-sky-500 bg-sky-50" : "border-gray-200"
               }`}

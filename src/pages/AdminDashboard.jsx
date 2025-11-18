@@ -23,10 +23,10 @@ export default function AdminDashboard() {
       glow: "shadow-[0_0_25px_3px_rgba(244,114,182,0.3)]",
     },
     {
-      title: "Quản lý danh mục DVKT",
+      title: "Quản lý danh mục dịch vụ",
       icon: <Activity size={40} className="text-emerald-500" />,
       desc: "Quản lý nhóm DV, dịch vụ, và bảng giá kỹ thuật y tế.",
-      path: "/admin/danh-muc-dvkt", // ✅ chỉnh đúng route
+      path: "/admin/danh-muc-dv", // ✅ chỉnh đúng route
       glow: "shadow-[0_0_25px_3px_rgba(16,185,129,0.25)]",
     },
     {
@@ -34,6 +34,13 @@ export default function AdminDashboard() {
       icon: <Settings size={40} className="text-indigo-500" />,
       desc: "Quản lý nhóm thuốc, thuốc và bảng giá thuốc.",
       path: "/admin/danh-muc-thuoc",
+      glow: "shadow-[0_0_25px_3px_rgba(99,102,241,0.25)]",
+    },
+    {
+      title: "Quản lý danh mục DVKT",
+      icon: <Settings size={40} className="text-indigo-500" />,
+      desc: "Quản lý nhóm DVKT, dịch vụ kỹ thuật y tế và bảng giá DVKT.",
+      path: "/admin/danh-muc-dvkt",
       glow: "shadow-[0_0_25px_3px_rgba(99,102,241,0.25)]",
     },
   ];

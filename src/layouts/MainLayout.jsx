@@ -4,7 +4,7 @@ import Footer from "../components/Footer";
 
 export default function MainLayout({ children }) {
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-gradient-to-br from-blue-50 to-indigo-50">
+    <div className="flex flex-col h-screen  overflow-hidden bg-gradient-to-br from-blue-50 to-indigo-50">
       {/* Header cố định */}
       <div className="flex-shrink-0">
         <Header />

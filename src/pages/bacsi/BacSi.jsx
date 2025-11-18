@@ -4,28 +4,24 @@ import MainLayout from "../../layouts/MainLayout";
 import {
   fetchChoKhamList,
   fetchHomNayList,
-  handleUpdateKetQua,
-  handleChiDinhDVKT,
-  handleKeDonThuoc,
-  handleCancelLanKham,
   fetchLichSuKham,
   fetchPhongBacSi,
+  fetchLanKhamDetail,
+  fetchDonTheoLanKham,
 } from "../../controllers/BacSiController";
 
-// Components
 import PatientList from "./components/PatientList";
 import ResultForm from "./components/ResultForm";
 import LichSuKham from "./components/LichSuKham";
 import HeaderPhong from "./components/HeaderPhong";
 
-// Modals
-import ModalChiDinhDVKT from "./modals/ModalChiDinhDVKT";
+import ModalChiDinhDVKT from "./modals/modalbacsichidinhDVKT/ModalChiDinhDVKT";
 import ModalKeDonThuoc from "./modals/ModalKeDonThuoc";
 import ModalXacNhanHuy from "./modals/ModalXacNhanHuy";
 
-// =======================================================
-// 🔥 HÀM LẤY USER AN TOÀN – KHÔNG BAO GIỜ LỖI undefined
-// =======================================================
+import { toast } from "react-toastify";
+
+// ======================== USER ==============================
 function getCurrentUser() {
   try {
     const u =
@@ -36,10 +32,10 @@ function getCurrentUser() {
     if (!u) return {};
 
     return {
-      id: u.userId || u.id || null,
-      tenDangNhap: u.tenDangNhap || u.username || "",
-      vaiTro: Array.isArray(u.roles) ? u.roles[0] : u.vaiTro || "",
-      idPhong: u.idPhong || null,
+      id: u.userId || u.id,
+      tenDangNhap: u.tenDangNhap || u.username,
+      vaiTro: Array.isArray(u.roles) ? u.roles[0] : u.vaiTro,
+      idPhong: u.idPhong,
     };
   } catch {
     return {};
@@ -49,19 +45,83 @@ function getCurrentUser() {
 export default function BacSi() {
   const user = getCurrentUser();
   const idBacSi = Number(user.id);
-  const idPhong = Number(user.idPhong);
 
+  const [idPhong, setIdPhong] = useState(Number(user.idPhong));
   const isBacSi = (user.vaiTro || "").toUpperCase() === "BAC_SI";
 
-  // ================= STATE ==================
   const [listChoKham, setListChoKham] = useState([]);
   const [listHomNay, setListHomNay] = useState([]);
+
   const [lichSu, setLichSu] = useState([]);
   const [phong, setPhong] = useState(null);
+
   const [selected, setSelected] = useState(null);
   const [filter, setFilter] = useState("CHO_KHAM");
 
-  // ================= VALIDATION ==================
+  const [openKeDon, setOpenKeDon] = useState(false);
+  const [openChiDinh, setOpenChiDinh] = useState(false);
+
+  const [donThuoc, setDonThuoc] = useState(null);
+
+  // ================= SELECT PATIENT =================
+  const handleSelectPatient = async (bn) => {
+    console.log("👉 SELECTED LIST ITEM:", bn);
+
+    // bn.id = idLanKham
+    await fetchLanKhamDetail(bn.id, setSelected);
+  };
+
+  function handleOpenKeDon() {
+    if (!selected?.id) {
+      toast.error("Chưa chọn lượt khám!");
+      return;
+    }
+    setOpenKeDon(true);
+  }
+
+  function handleOpenChiDinh() {
+    if (!selected?.id) {
+      toast.error("Chưa chọn lượt khám!");
+      return;
+    }
+    setOpenChiDinh(true);
+  }
+
+  // ================= LOAD PHÒNG =================
+  useEffect(() => {
+    if (!idBacSi) return;
+
+    fetchPhongBacSi(idBacSi, (p) => {
+      setPhong(p);
+      if (p?.idPhong) setIdPhong(p.idPhong);
+    });
+  }, [idBacSi]);
+
+  // ================= LOAD CHỜ KHÁM + HÔM NAY =================
+  useEffect(() => {
+    if (!idPhong || !idBacSi) return;
+
+    fetchChoKhamList(idBacSi, idPhong, setListChoKham);
+    fetchHomNayList(idBacSi, idPhong, setListHomNay);
+  }, [idPhong, idBacSi]);
+
+  // ================= LOAD LỊCH SỬ + ĐƠN =================
+  useEffect(() => {
+    if (selected?.idBenhNhan) {
+      fetchLichSuKham(selected.idBenhNhan, setLichSu);
+    }
+
+    if (selected?.id) {
+      fetchDonTheoLanKham(selected.id, setDonThuoc);
+    } else {
+      setDonThuoc(null);
+    }
+  }, [selected]);
+
+  const currentList =
+    filter === "CHO_KHAM" ? listChoKham : listHomNay;
+
+  // ================= VALIDATION =====================
   if (!idBacSi) {
     return (
       <MainLayout>
@@ -82,62 +142,67 @@ export default function BacSi() {
     );
   }
 
-  // ================= LOAD DATA ==================
-  useEffect(() => {
-    if (!idBacSi) return;
-
-    // Lấy phòng bác sĩ
-    fetchPhongBacSi(idBacSi, setPhong);
-
-    // Lấy danh sách chờ khám + đã khám
-    if (idPhong) {
-      fetchChoKhamList(idBacSi, idPhong, setListChoKham);
-      fetchHomNayList(idBacSi, idPhong, setListHomNay);
-    }
-  }, [idBacSi, idPhong]);
-
-  useEffect(() => {
-    if (selected?.idBenhNhan) {
-      fetchLichSuKham(selected.idBenhNhan, setLichSu);
-    }
-  }, [selected]);
-
-  const currentList = filter === "CHO_KHAM" ? listChoKham : listHomNay;
-
-  // ================= RENDER ==================
+  // ================= UI ======================
   return (
     <MainLayout>
-      {/* Header: hiển thị phòng */}
       <HeaderPhong phong={phong} />
 
       <div className="w-full h-[calc(100vh-80px)] p-4 flex gap-4">
-        {/* Cột trái – Danh sách chờ khám */}
         <PatientList
           list={currentList}
           filter={filter}
           setFilter={setFilter}
           selected={selected}
           setSelected={setSelected}
+          onSelect={handleSelectPatient}
         />
 
-        {/* Cột giữa – Form kết quả */}
         <ResultForm
           selected={selected}
           idBacSi={idBacSi}
           idPhong={idPhong}
+          onOpenKeDon={handleOpenKeDon}
+          onOpenChiDinh={handleOpenChiDinh}
           refresh={() => {
             fetchChoKhamList(idBacSi, idPhong, setListChoKham);
             fetchHomNayList(idBacSi, idPhong, setListHomNay);
+            if (selected?.id) fetchDonTheoLanKham(selected.id, setDonThuoc);
           }}
         />
 
-        {/* Cột phải – Lịch sử khám */}
         <LichSuKham list={lichSu} />
       </div>
 
-      {/* Modals */}
-      <ModalChiDinhDVKT />
-      <ModalKeDonThuoc />
+      {openChiDinh && (
+        <ModalChiDinhDVKT
+          open={openChiDinh}
+          idLanKham={selected?.id}
+          onClose={(needRefresh) => {
+            setOpenChiDinh(false);
+            if (needRefresh) {
+              fetchChoKhamList(idBacSi, idPhong, setListChoKham);
+              fetchHomNayList(idBacSi, idPhong, setListHomNay);
+            }
+          }}
+        />
+      )}
+
+      {openKeDon && (
+        <ModalKeDonThuoc
+          isOpen={openKeDon}
+          onClose={() => setOpenKeDon(false)}
+          idLanKham={selected?.id}
+          idBenhNhan={selected?.idBenhNhan}
+          idBacSi={idBacSi}
+          onSaved={() => {
+            setOpenKeDon(false);
+            fetchChoKhamList(idBacSi, idPhong, setListChoKham);
+            fetchHomNayList(idBacSi, idPhong, setListHomNay);
+            if (selected?.id) fetchDonTheoLanKham(selected.id, setDonThuoc);
+          }}
+        />
+      )}
+
       <ModalXacNhanHuy />
     </MainLayout>
   );

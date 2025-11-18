@@ -34,8 +34,11 @@ const DangNhap = ({ onSwitchPage, onLoginSuccess }) => {
 
         // ✅ Lưu localStorage
         localStorage.setItem("userInfo", JSON.stringify(user));
+        
         onLoginSuccess(user);
         setSuccess("✅ Đăng nhập thành công!");
+        localStorage.setItem("access_token", data.token);
+
         // ✅ Điều hướng đúng vai trò
 if (user.roles.includes("ADMIN")) {
   navigate("/admin");

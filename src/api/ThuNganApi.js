@@ -27,6 +27,22 @@ export const getBillDetail = async (idOrCode) => {
     return null;
   }
 };
+// ================== TẠO URL THANH TOÁN VNPAY ==================
+export const getVnpayPaymentUrl = async (maHoaDon) => {
+  try {
+    const res = await axios.get(
+      `https://localhost:7007/api/Vnpay/CreatePaymentUrl`,
+      {
+        params: { maHd: maHoaDon },
+      }
+    );
+
+    return res.data; // { paymentUrl: "https://..." }
+  } catch (err) {
+    console.error("❌ Lỗi tạo URL thanh toán VNPay:", err);
+    return null;
+  }
+};
 
 // ================== XÁC NHẬN THANH TOÁN ==================
 export const confirmPayment = async (idOrCode, idThuNgan) => {

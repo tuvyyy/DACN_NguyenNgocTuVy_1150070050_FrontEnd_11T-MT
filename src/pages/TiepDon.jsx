@@ -8,6 +8,7 @@ import {
   fetchReceptionStats,
 } from "../controllers/TiepDonController";
 import { cancelReception } from "../api/TiepDonApi";
+import { saveSinhHieu } from "../api/TiepDonApi";
 import { usePermission } from "../hooks/UsePermission";
 
 export default function TiepDon() {
@@ -27,6 +28,20 @@ export default function TiepDon() {
     dia_chi_daydu: "",
     quoc_gia: "Việt Nam",
   });
+  // ================== FORM SINH HIỆU ==================
+const [vital, setVital] = useState({
+  nhietDo: "",
+  huyetApTamThu: "",
+  huyetApTamTruong: "",
+  nhipTim: "",
+  nhipTho: "",
+  spo2: "",
+  chieuCao: "",
+  canNang: "",
+  bmi: "",
+  ngayDo: "",
+});
+
 
   const [loading, setLoading] = useState(false);
   const [listToday, setListToday] = useState([]);
@@ -60,36 +75,45 @@ export default function TiepDon() {
     }, 800);
     return () => clearTimeout(timer);
   }, [form.cccd, form.so_dien_thoai]);
+  
+  const vitalPayload = {
+  NhietDo: Number(vital.nhietDo) || null,
+  HuyetApTamThu: Number(vital.huyetApTamThu) || null,
+  HuyetApTamTruong: Number(vital.huyetApTamTruong) || null,
+  NhipTim: Number(vital.nhipTim) || null,
+  NhipTho: Number(vital.nhipTho) || null,
+  SpO2: Number(vital.spo2) || null,
+  CanNang: Number(vital.canNang) || null,
+  ChieuCao: Number(vital.chieuCao) || null,
+  };
 
   // ================== Lưu tiếp đón ==================
 const handleSave = async () => {
-    console.log("🚀 Gọi handleSave()");
-
   if (!canAdd && !canEdit) return alert("⚠️ Bạn không có quyền lưu!");
   setLoading(true);
 
-await handleTiepDonSave(form, (info, state) => {
-  console.log("📤 Callback từ handleTiepDonSave:", info, state);
+  await handleTiepDonSave(
+    {
+      ...form,
+      sinhHieu: vital,   // ⭐ Gửi luôn sinh hiệu về BE
+    },
+    (info, state) => {
+      if (!info || !info.idBenhNhan) {
+        alert("⚠️ Không có dữ liệu bệnh nhân hợp lệ từ server!");
+        return;
+      }
 
-  if (!info || !info.idBenhNhan) {
-    alert("⚠️ Không có dữ liệu bệnh nhân hợp lệ từ server!");
-    console.warn("❌ info nhận được:", info);
-    return;
-  }
-
-  if (state === "NEED_ORDER") {
-    // 🟡 Nếu BN đã được tiếp đón nhưng chưa chỉ định → hiển thị modal
-    setModal({ show: true, data: info });
-  } else {
-    // ✅ Nếu BN mới hoặc tạo hồ sơ mới → chuyển sang chỉ định
-    navigate("/tiep-don/chi-dinh", { state: { patient: info } });
-  }
-});
+      if (state === "NEED_ORDER") {
+        setModal({ show: true, data: info });
+      } else {
+        navigate("/tiep-don/chi-dinh", { state: { patient: info } });
+      }
+    }
+  );
 
   await loadData();
   setLoading(false);
 };
-
 
   // ================== Hủy tiếp đón ==================
   const confirmCancel = (id, maHs) => setCancelModal({ show: true, id, maHs });
@@ -208,22 +232,6 @@ await handleTiepDonSave(form, (info, state) => {
               </div>
             </div>
 
-<div className="border-t border-gray-100 bg-gray-50 p-3 flex justify-end rounded-b-xl">
-  {(canAdd || canEdit) && (
-    <button
-      onClick={handleSave} // ✅ gọi hàm chính để lưu tiếp đón
-      disabled={loading}
-      className={`px-5 py-1.5 text-sm font-semibold text-white rounded-md shadow-md transition-all duration-300 ${
-        loading
-          ? "bg-gray-400 cursor-not-allowed"
-          : "bg-gradient-to-r from-sky-600 to-cyan-500 hover:brightness-110 hover:scale-105"
-      }`}
-    >
-      {loading ? "⏳ Đang lưu..." : "💾 Lưu & chuyển chỉ định"}
-    </button>
-  )}
-</div>
-
           </div>
 
           {/* ===== DANH SÁCH HỦY ===== */}
@@ -253,6 +261,94 @@ await handleTiepDonSave(form, (info, state) => {
             </div>
           </div>
         </div>
+
+{/* ==================== FORM SINH HIỆU (AUTO SAVE CÙNG TIẾP ĐÓN) ==================== */}
+<div className="bg-white border border-blue-200 rounded-xl shadow-sm p-4 mt-2">
+  <h3 className="font-semibold text-sky-700 text-sm mb-3 flex items-center gap-2">
+    🩺 Sinh hiệu (Vital Signs)
+  </h3>
+
+<div className="grid grid-cols-6 gap-3 text-sm">
+
+  <Input label="🌡️ Nhiệt độ (°C)" name="nhietDo"
+    value={vital.nhietDo}
+    onChange={(e) => setVital({ ...vital, nhietDo: e.target.value })}/>
+
+<Input label="💓 Nhịp tim (lần/phút)" 
+  name="nhipTim"
+  value={vital.nhipTim}
+  onChange={(e) => setVital({ ...vital, nhipTim: e.target.value })}
+/>
+<Input label="🫀 SpO₂ (%)" 
+  name="spo2"
+  value={vital.spo2}
+  onChange={(e) => setVital({ ...vital, spo2: e.target.value })}
+/>
+
+
+<Input label="🩸 Huyết áp Tâm thu (mmHg)" 
+  name="huyetApTamThu"
+  value={vital.huyetApTamThu}
+  onChange={(e) => setVital({ ...vital, huyetApTamThu: e.target.value })}
+/>
+
+<Input label="🩸 Huyết áp Tâm trương (mmHg)" 
+  name="huyetApTamTruong"
+  value={vital.huyetApTamTruong}
+  onChange={(e) => setVital({ ...vital, huyetApTamTruong: e.target.value })}
+/>
+
+
+  <Input label="🫁 Nhịp thở" name="nhipTho"
+    value={vital.nhipTho}
+    onChange={(e) => setVital({ ...vital, nhipTho: e.target.value })}/>
+
+  <Input label="📏 Chiều cao (cm)" name="chieuCao"
+    value={vital.chieuCao}
+    onChange={(e) => setVital({ ...vital, chieuCao: e.target.value })}/>
+
+  <Input label="⚖️ Cân nặng (kg)" name="canNang"
+    value={vital.canNang}
+    onChange={(e) => setVital({ ...vital, canNang: e.target.value })}/>
+
+  <Input label="⚖️ Cân nặng vào viện (kg)" name="canNangVaoVien"
+    value={vital.canNangVaoVien}
+    onChange={(e) => setVital({ ...vital, canNangVaoVien: e.target.value })}/>
+
+  <Input label="BMI" name="bmi" readOnly
+    value={vital.bmi}
+    onChange={() => {}}/>
+
+  <Input label="👤 Người đo" name="nguoiDo"
+    value={vital.nguoiDo}
+    onChange={(e) => setVital({ ...vital, nguoiDo: e.target.value })}/>
+
+  <Input type="datetime-local" label="📅 Ngày đo" name="ngayDo"
+    value={vital.ngayDo}
+    onChange={(e) => setVital({ ...vital, ngayDo: e.target.value })}/>
+
+</div>
+
+<div className="border-t border-gray-100 bg-gray-50 p-3 flex justify-end rounded-b-xl">
+  {(canAdd || canEdit) && (
+    <button
+      onClick={handleSave} // ✅ gọi hàm chính để lưu tiếp đón
+      disabled={loading}
+      className={`px-5 py-1.5 text-sm font-semibold text-white rounded-md shadow-md transition-all duration-300 ${
+        loading
+          ? "bg-gray-400 cursor-not-allowed"
+          : "bg-gradient-to-r from-sky-600 to-cyan-500 hover:brightness-110 hover:scale-105"
+      }`}
+    >
+      {loading ? "⏳ Đang lưu..." : "💾 Lưu & chuyển chỉ định"}
+    </button>
+  )}
+</div>
+
+  <p className="text-xs text-gray-500 mt-2 italic">
+    👉 Sinh hiệu sẽ tự động lưu khi bạn bấm “💾 Lưu & chuyển chỉ định”
+  </p>
+</div>
 
         {/* ===== MODAL XÁC NHẬN CHỈ ĐỊNH ===== */}
        {modal.show && (
@@ -309,8 +405,11 @@ function ConfirmModal({ title, content, onCancel, onConfirm }) {
 
 function Input({ label, name, value, onChange, placeholder, type = "text", readOnly }) {
   return (
-    <div>
-      <label className="block text-gray-700 text-xs font-semibold mb-0.5">{label}</label>
+    <div className="relative">
+      <label className="block text-gray-700 text-xs font-semibold mb-0.5">
+        {label}
+      </label>
+
       <input
         type={type}
         name={name}
@@ -318,13 +417,15 @@ function Input({ label, name, value, onChange, placeholder, type = "text", readO
         onChange={onChange}
         placeholder={placeholder}
         readOnly={readOnly}
-        className={`w-full border border-gray-300 rounded-md px-2 py-1 outline-none transition-all duration-150 focus:ring-2 focus:ring-sky-400 ${
-          readOnly ? "bg-gray-100 cursor-not-allowed" : ""
-        }`}
+        className={`w-full border border-gray-300 rounded-md px-2 py-1 text-sm outline-none transition-all duration-150
+          focus:ring-2 focus:ring-sky-400 focus:border-sky-500
+          ${readOnly ? "bg-gray-100 cursor-not-allowed" : "hover:border-gray-400"}
+        `}
       />
     </div>
   );
 }
+
 
 function Select({ label, name, value, onChange, options }) {
   return (

@@ -1,4 +1,4 @@
-// src/controller/DanhMucDVKT.js
+// src/controller/DanhMucDichVuController.js
 import {
   apiGetNhomDichVu,
   apiGetDichVuList,
@@ -10,7 +10,7 @@ import {
   apiUpdateDichVuGia,
   apiSoftDeleteDichVuGia,
   apiGetGiaHienHanh,
-} from "../api/DanhMucDVKTApi";
+} from "../api/DanhMucDichVuApi";
 
 const safe = async (fn) => {
   try {

@@ -5,6 +5,8 @@ import {
   getReceipt,
 } from "../api/ThuNganApi";
 import Swal from "sweetalert2";
+import axios from "axios";
+
 
 // ================== DANH SÁCH BỆNH NHÂN ==================
 export async function loadWaitingPatients(type, setList) {
@@ -23,22 +25,28 @@ export const handleViewBill = (maHoaDon, navigate) => {
 };
 
 // ================== XÁC NHẬN THANH TOÁN ==================
-export async function handleConfirmPayment(maHoaDon, idThuNgan, reloadList) {
-  try {
-    const res = await confirmPayment(maHoaDon, idThuNgan);
-    await Swal.fire({
-      icon: "success",
-      title: "✅ Thanh toán thành công!",
-      text: `${res.message} (${res.maHd})`,
-      confirmButtonColor: "#22c55e",
-    });
-
-    if (reloadList) reloadList();
-  } catch (err) {
-    console.error("❌ Lỗi khi xác nhận thanh toán:", err);
-    Swal.fire("Lỗi khi thanh toán", "Vui lòng thử lại!", "error");
+export const handleConfirmPayment = async (maHd, idThuNgan, paymentMethod) => {
+  if (!idThuNgan) {
+    alert("Thiếu thông tin thu ngân, vui lòng đăng nhập lại!");
+    return;
   }
-}
+
+  try {
+    const url = `https://localhost:7007/api/HoaDon/xac-nhan-thanh-toan/ma/${maHd}`;
+    const res = await axios.put(
+      url,
+      {
+        idThuNgan,
+        hinhThucThanhToan: paymentMethod,
+      },
+      { headers: { "Content-Type": "application/json" } }
+    );
+    return res.data;
+  } catch (err) {
+    console.error("❌ Lỗi xác nhận thanh toán:", err);
+    throw err;
+  }
+};
 
 // ================== IN PHIẾU THU ==================
 export async function handlePrintReceipt(maHoaDon) {

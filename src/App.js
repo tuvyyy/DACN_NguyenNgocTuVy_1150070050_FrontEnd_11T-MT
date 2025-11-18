@@ -16,6 +16,9 @@ import StaffDashboard from "./pages/StaffDashboard.jsx";
 // ===== Bác sĩ =====
 import BacSi from "./pages/bacsi/BacSi.jsx";
 
+// =====Thực hiện Cận lâm sàng =====
+import ThucHienDVKT from "./pages/thuchiendvkt/ThucHienDVKT.jsx";
+
 // ===== Tiếp đón =====
 import TiepDon from "./pages/TiepDon.jsx";
 import ChiDinhKham from "./pages/ChiDinhKham.jsx";
@@ -29,8 +32,10 @@ import AdminLayout from "./layouts/AdminLayout.jsx";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
 import { AdminUserPage } from "./pages/admin/users";
 import AdminPermissionPage from "./pages/admin/permission/AdminPermissionPage";
-import DanhMucDVKT from "./pages/admin/dvkt/DanhMucDVKT.jsx";
-import ThuocPage from "./pages/admin/thuoc/index.jsx"; // ✅ Thêm Danh Mục Thuốc (2 cột)
+import DanhMucDichVu from "./pages/admin/dvkt/DanhMucDichVu.jsx";
+import ThuocPage from "./pages/admin/thuoc/index.jsx";
+import DanhMucDVKT from "./pages/admin/danhmucdvkt/index.jsx";
+
 
 // =======================================================
 // 🧩 APP CHÍNH
@@ -74,8 +79,15 @@ export default function App() {
           path="/bac-si"
           element={<RequireRole user={currentUser} role="BAC_SI" />}
         >
-          <Route index element={<BacSi />} />
+        <Route index element={<BacSi />} />
         </Route>
+
+        <Route
+  path="/can-lam-sang"
+  element={<RequireRole user={currentUser} role="BAC_SI" />}
+>
+  <Route index element={<ThucHienDVKT />} />
+</Route>
 
         {/* ===================== TIẾP ĐÓN ===================== */}
         <Route
@@ -108,10 +120,11 @@ export default function App() {
             <Route path="system" element={<div>Trang cấu hình hệ thống</div>} />
 
             {/* ✅ Danh mục DVKT */}
-            <Route path="danh-muc-dvkt" element={<DanhMucDVKT />} />
-
+            <Route path="danh-muc-dv" element={<DanhMucDichVu />} />
             {/* ✅ Danh mục Thuốc */}
             <Route path="danh-muc-thuoc" element={<ThuocPage />} />
+             {/* ✅ Danh mục Thuốc */}
+            <Route path="danh-muc-dvkt" element={<DanhMucDVKT />} />
           </Route>
         </Route>
 

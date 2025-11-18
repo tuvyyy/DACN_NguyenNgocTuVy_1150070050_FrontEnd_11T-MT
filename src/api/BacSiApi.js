@@ -9,11 +9,10 @@ import axios from "axios";
  *  ============================================ */
 const BASE_URL = "https://localhost:7007";
 
-// Lấy token từ localStorage
-const getToken = () =>
-  localStorage.getItem("access_token") ||
-  localStorage.getItem("token") ||
-  sessionStorage.getItem("access_token");
+// Lấy token
+const getToken = () => localStorage.getItem("access_token");
+
+
 
 const http = axios.create({
   baseURL: BASE_URL,
@@ -25,14 +24,18 @@ const http = axios.create({
 // Gắn Authorization nếu có
 http.interceptors.request.use((config) => {
   const token = getToken();
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  console.log("---- FE REQUEST ----");
+  console.log("URL =", config.url);
+  console.log("METHOD =", config.method);
+console.log("INTERCEPTOR TOKEN = ", token);
 
-  if (!config.headers["Content-Type"]) {
-    config.headers["Content-Type"] = "application/json";
-  }
+  if (token) config.headers.Authorization = `Bearer ${token}`;
 
   return config;
 });
+
+
+
 
 // Chuẩn hóa response
 const ok = (res) => res?.status >= 200 && res?.status < 300;
@@ -40,103 +43,143 @@ const ok = (res) => res?.status >= 200 && res?.status < 300;
 const wrap = (res) => ({
   ok: ok(res),
   status: res?.status ?? 0,
-  data: res?.data?.data ?? res?.data ?? null, // ⭐ auto lấy res.data.data nếu có
+  data: res?.data?.data ?? res?.data ?? null,
   message:
     res?.data?.message ||
     res?.data?.error ||
     (ok(res) ? "Success" : `Error ${res?.status || ""}`.trim()),
 });
+export async function chiDinhDVKTRaw(dto, config = {}) {
+  return http.post("/api/bacsi/dvkt/chidinh", dto, config);
+}
 
-/** ==========================================================
- *  1) DANH SÁCH BỆNH NHÂN CHỜ KHÁM
- *  GET /api/LanKham/cho-kham?idBacSi=&idPhong=
- *  ========================================================== */
+// ============================================
+// CHỈ ĐỊNH DVKT – LUÔN GỬI TOKEN
+// ============================================
+export async function chiDinhDVKT(dto) {
+  const token = getToken();
+
+  const res = await http.post(
+    "/api/bacsi/dvkt/chidinh",
+    dto,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    }
+  );
+
+  return wrap(res);
+}
+export function getLanKhamDetail(id) {
+  return http.get(`/api/LanKham/lan-kham/${id}/detail`);
+}
+
+
+// ============================================
+// 1) DANH SÁCH BỆNH NHÂN CHỜ KHÁM
+// ============================================
 export async function getChoKham({ idBacSi, idPhong }) {
-  const res = await http.get("/api/LanKham/cho-kham", { params: { idBacSi, idPhong } });
+  const res = await http.get("/api/LanKham/cho-kham", {
+    params: { idBacSi, idPhong },
+  });
   return wrap(res);
 }
 
-/** ==========================================================
- *  2) DANH SÁCH LƯỢT KHÁM HÔM NAY
- *  ========================================================== */
+// ============================================
+// 2) DANH SÁCH LƯỢT KHÁM HÔM NAY
+// ============================================
 export async function getHomNay({ idBacSi, idPhong }) {
-  const res = await http.get("/api/LanKham/hom-nay", { params: { idBacSi, idPhong } });
+  const res = await http.get("/api/LanKham/hom-nay", {
+    params: { idBacSi, idPhong },
+  });
   return wrap(res);
 }
 
-/** ==========================================================
- *  3) CẬP NHẬT KẾT QUẢ KHÁM
- *  ========================================================== */
+// ============================================
+// 3) CẬP NHẬT KẾT QUẢ KHÁM
+// ============================================
 export async function updateKetQuaKham(idLanKham, dto) {
   const res = await http.put(`/api/LanKham/${idLanKham}`, dto);
   return wrap(res);
 }
 
-/** ==========================================================
- *  4) CHỈ ĐỊNH DVKT
- *  ========================================================== */
-export async function chiDinhDichVu(idLanKham, ds) {
-  const res = await http.post(`/api/LanKham/${idLanKham}/dichVu`, ds);
+// ============================================
+// DANH SÁCH DVKT
+// ============================================
+export async function getAllDVKT() {
+  const res = await http.get("/api/bacsi/dvkt/full");
   return wrap(res);
 }
 
-/** ==========================================================
- *  5) KÊ ĐƠN THUỐC
- *  ========================================================== */
-export async function keDonThuoc(idLanKham, dto) {
-  const res = await http.post(`/api/LanKham/${idLanKham}/donThuoc`, dto);
+// Lấy DVKT theo lần khám
+export async function getDVKTByLanKham(idLanKham) {
+  const res = await http.get(`/api/bacsi/dvkt/lankham/${idLanKham}`);
   return wrap(res);
 }
 
-/** ==========================================================
- *  6) HỦY LƯỢT KHÁM
- *  ========================================================== */
+// Cập nhật DVKT
+export async function updateDVKT(id, dto) {
+  const res = await http.put(`/api/bacsi/dvkt/${id}`, dto);
+  return wrap(res);
+}
+
+// Hủy DVKT
+export async function cancelDVKT(id) {
+  const res = await http.delete(`/api/bacsi/dvkt/${id}`);
+  return wrap(res);
+}
+
+// ============================================
+// 6) HỦY LƯỢT KHÁM
+// ============================================
 export async function cancelLanKham(idLanKham, reason) {
-  const res = await http.patch(`/api/LanKham/${idLanKham}/cancel`, reason ?? "");
+  const res = await http.patch(
+    `/api/LanKham/${idLanKham}/cancel`,
+    reason ?? ""
+  );
   return wrap(res);
 }
 
-/** ==========================================================
- *  7) LỊCH SỬ KHÁM
- *  ========================================================== */
+// ============================================
+// 7) LỊCH SỬ KHÁM
+// ============================================
 export async function getLichSuKham(idBenhNhan) {
   const res = await http.get(`/api/benhNhan/${idBenhNhan}/lichSuKham`);
   return wrap(res);
 }
 
-/** ==========================================================
- *  8) (Tạm bỏ) API lấy bảng giá phòng khám
- *  Backend chưa có endpoint này => comment lại
- *  ========================================================== */
-// export async function getClinicPrices() {
-//   const res = await http.get("/api/chidinh/clinics/prices");
-//   return wrap(res);
-// }
-
-/** ==========================================================
- *  Helper kiểm tra response
- *  ========================================================== */
+// Helper
 export function ensureOk(resp, fallbackMsg = "Có lỗi xảy ra") {
   if (!resp?.ok) throw new Error(resp?.message || fallbackMsg);
   return resp.data;
 }
+
+// Lấy phòng theo bác sĩ
 export async function getPhongByBacSi(idBacSi) {
   const res = await http.get(`/api/bacsi/${idBacSi}/phong`);
   return wrap(res);
 }
 
-/** ==========================================================
- *  DEFAULT EXPORT
- *  ========================================================== */
+// ============================================
+// DEFAULT EXPORT
+// ============================================
 const BacSiApi = {
   getChoKham,
   getHomNay,
   updateKetQuaKham,
-  chiDinhDichVu,
-  keDonThuoc,
   cancelLanKham,
   getLichSuKham,
-  getPhongByBacSi,  
+  getPhongByBacSi,
+
+  chiDinhDVKT,
+  chiDinhDVKTRaw, // ← Dâu nghĩ là có
+
+  getAllDVKT,
+  getDVKTByLanKham,
+  updateDVKT,
+  cancelDVKT,
+
   ensureOk,
 };
 
